@@ -1,0 +1,22 @@
+{
+  "name": "simpsons-essential-addon",
+  "version": "1.0.0",
+  "description": "Stremio Add-on for The Simpsons: The Essential Cut (Golden Era Curated Episodes)",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "build:dataset": "node build-dataset.js",
+    "test": "node test-addon.js"
+  },
+  "keywords": [
+    "stremio",
+    "addon",
+    "simpsons",
+    "essential"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "stremio-addon-sdk": "^1.6.10"
+  }
+}
