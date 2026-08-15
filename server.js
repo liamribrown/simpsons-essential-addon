@@ -17,9 +17,11 @@ try {
   console.warn('Run "npm run build:dataset" to generate dataset.json.');
 }
 
+const SERIES_ID = 'simpsons_essential_cut';
+
 const manifest = {
   id: 'community.simpsons.essentialcut',
-  version: '1.0.3',
+  version: '1.0.4',
   name: 'The Simpsons: The Essential Cut',
   description: 'Curated golden-era run of 150 essential episodes of The Simpsons (Seasons 1-14).',
   types: ['series'],
@@ -36,7 +38,7 @@ const manifest = {
     }
   ],
   resources: ['catalog', 'meta'],
-  idPrefixes: ['tt0096697', 'tt0096697_essential', 'tt'],
+  idPrefixes: ['simpsons_essential_cut'],
   logo: 'https://images.metahub.space/logo/medium/tt0096697/img',
   background: 'https://images.metahub.space/background/medium/tt0096697/img'
 };
@@ -44,7 +46,7 @@ const manifest = {
 const builder = new addonBuilder(manifest);
 
 const SERIES_METADATA = {
-  id: 'tt0096697',
+  id: SERIES_ID,
   type: 'series',
   name: 'The Simpsons (The Essential Cut)',
   genres: ['Animation', 'Comedy'],
@@ -58,7 +60,7 @@ const SERIES_METADATA = {
   runtime: '22-24 min'
 };
 
-// Catalog Handler - Always returns the essential cut series metadata
+// Catalog Handler
 builder.defineCatalogHandler((args) => {
   if (args.type === 'series' && args.id === 'simpsons_essential_catalog') {
     if (args.extra && args.extra.search) {
@@ -68,7 +70,6 @@ builder.defineCatalogHandler((args) => {
       }
       return Promise.resolve({ metas: [] });
     }
-    // Return the series item for default views, genre filters, skip=0, etc.
     return Promise.resolve({
       metas: [SERIES_METADATA]
     });
@@ -76,13 +77,12 @@ builder.defineCatalogHandler((args) => {
   return Promise.resolve({ metas: [] });
 });
 
-// Meta Handler - Serves the 150 curated episodes
+// Meta Handler - Serves exclusively our 150 essential episodes
 builder.defineMetaHandler((args) => {
-  if (args.type === 'series' && (args.id === 'tt0096697' || args.id === 'tt0096697_essential')) {
+  if (args.type === 'series' && args.id === SERIES_ID) {
     return Promise.resolve({
       meta: {
         ...SERIES_METADATA,
-        id: args.id,
         videos: dataset
       }
     });
