@@ -21,13 +21,13 @@ const SERIES_ID = 'simpsons_essential_cut';
 
 const manifest = {
   id: 'community.simpsons.essentialcut',
-  version: '1.0.5',
+  version: '1.0.6',
   name: 'The Simpsons: The Essential Cut',
   description: 'Curated golden-era run of 150 essential episodes of The Simpsons (Seasons 1-14).',
-  types: ['series'],
+  types: ['tv'],
   catalogs: [
     {
-      type: 'series',
+      type: 'tv',
       id: 'simpsons_essential_catalog',
       name: 'The Simpsons: Essential Cut',
       extra: [
@@ -38,7 +38,7 @@ const manifest = {
     }
   ],
   resources: ['catalog', 'meta', 'stream'],
-  idPrefixes: ['simpsons_essential_cut'],
+  idPrefixes: ['tt'],
   logo: 'https://images.metahub.space/logo/medium/tt0096697/img',
   background: 'https://images.metahub.space/background/medium/tt0096697/img'
 };
@@ -46,8 +46,8 @@ const manifest = {
 const builder = new addonBuilder(manifest);
 
 const SERIES_METADATA = {
-  id: SERIES_ID,
-  type: 'series',
+  id: 'tt0096697',
+  type: 'tv',
   name: 'The Simpsons (The Essential Cut)',
   genres: ['Animation', 'Comedy'],
   poster: 'https://images.metahub.space/poster/small/tt0096697/img',
@@ -62,7 +62,7 @@ const SERIES_METADATA = {
 
 // Catalog Handler
 builder.defineCatalogHandler((args) => {
-  if (args.type === 'series' && args.id === 'simpsons_essential_catalog') {
+  if (args.type === 'tv' && args.id === 'simpsons_essential_catalog') {
     if (args.extra && args.extra.search) {
       const q = args.extra.search.toLowerCase();
       if ('the simpsons essential cut'.includes(q) || 'simpsons'.includes(q) || 'essential'.includes(q)) {
@@ -79,17 +79,11 @@ builder.defineCatalogHandler((args) => {
 
 // Meta Handler - Serves exclusively our 150 essential episodes
 builder.defineMetaHandler((args) => {
-  if (args.type === 'series' && args.id === SERIES_ID) {
-    // Stremio core validator strictly requires video IDs to begin with the series ID
-    const mappedVideos = dataset.map(video => ({
-      ...video,
-      id: `${SERIES_ID}:${video.season}:${video.episode}`
-    }));
-
+  if (args.type === 'tv' && args.id === 'tt0096697') {
     return Promise.resolve({
       meta: {
         ...SERIES_METADATA,
-        videos: mappedVideos
+        videos: dataset
       }
     });
   }
@@ -98,7 +92,7 @@ builder.defineMetaHandler((args) => {
 
 // Stream Handler - Translates our custom ID back to IMDb and proxies streams
 builder.defineStreamHandler((args) => {
-  if (args.type === 'series' && args.id.startsWith(`${SERIES_ID}:`)) {
+  if (args.type === 'tv' && args.id.startsWith('tt0096697:')) {
     const parts = args.id.split(':');
     if (parts.length === 3) {
       const season = parts[1];
