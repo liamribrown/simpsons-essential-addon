@@ -17,7 +17,7 @@ try {
 
 const manifest = {
   id: 'community.simpsons.essentialcut',
-  version: '1.0.0',
+  version: '1.0.1',
   name: 'The Simpsons: The Essential Cut',
   description: 'Curated golden-era run of 150 essential episodes of The Simpsons (Seasons 1-14).',
   types: ['series'],
@@ -25,7 +25,11 @@ const manifest = {
     {
       type: 'series',
       id: 'simpsons_essential_catalog',
-      name: 'The Simpsons: Essential Cut'
+      name: 'The Simpsons: Essential Cut',
+      extra: [
+        { name: 'search', isRequired: false },
+        { name: 'skip', isRequired: false }
+      ]
     }
   ],
   resources: ['catalog', 'meta'],
@@ -54,6 +58,14 @@ const SERIES_METADATA = {
 // Catalog Handler
 builder.defineCatalogHandler((args) => {
   if (args.type === 'series' && args.id === 'simpsons_essential_catalog') {
+    // If search filter is used
+    if (args.extra && args.extra.search) {
+      const q = args.extra.search.toLowerCase();
+      if ('the simpsons essential cut'.includes(q) || 'simpsons'.includes(q) || 'essential'.includes(q)) {
+        return Promise.resolve({ metas: [SERIES_METADATA] });
+      }
+      return Promise.resolve({ metas: [] });
+    }
     return Promise.resolve({
       metas: [SERIES_METADATA]
     });
@@ -67,6 +79,7 @@ builder.defineMetaHandler((args) => {
     return Promise.resolve({
       meta: {
         ...SERIES_METADATA,
+        id: args.id,
         videos: dataset
       }
     });
@@ -78,8 +91,8 @@ const PORT = parseInt(process.env.PORT, 10) || 7000;
 
 serveHTTP(builder.getInterface(), { port: PORT })
   .then((server) => {
-    console.log(`Add-on HTTP server running at: ${server.url}`);
-    console.log(`Manifest URL: ${server.url}manifest.json`);
+    console.log(`Add-on HTTP server running on port ${PORT}`);
+    console.log(`Manifest URL: ${server.url || `http://127.0.0.1:${PORT}/`}manifest.json`);
   })
   .catch((err) => {
     console.error('Failed to start server:', err);
