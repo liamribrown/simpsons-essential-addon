@@ -21,7 +21,7 @@ const SERIES_ID = 'simpsons_curated_150';
 
 const manifest = {
   id: 'community.simpsons.essentialcut',
-  version: '1.0.7',
+  version: '1.0.8',
   name: 'The Simpsons: The Essential Cut',
   description: 'Curated golden-era run of 150 essential episodes of The Simpsons (Seasons 1-14).',
   types: ['series'],
@@ -102,33 +102,22 @@ builder.defineMetaHandler((args) => {
   return Promise.resolve({ meta: null });
 });
 
-// Stream Handler - Translates our custom ID back to IMDb and proxies streams
+// Stream Handler - Redirects users to the standard IMDb page to load their private scrapers (AIOStreams, Torrentio, etc.)
 builder.defineStreamHandler((args) => {
   if (args.type === 'series' && args.id.startsWith(`${SERIES_ID}:`)) {
     const parts = args.id.split(':');
     if (parts.length === 3) {
       const season = parts[1];
       const episode = parts[2];
-      const realId = `tt0096697:${season}:${episode}`;
       
-      return new Promise((resolve) => {
-        const https = require('https');
-        https.get(`https://torrentio.strem.fun/stream/series/${realId}.json`, (res) => {
-          let data = '';
-          res.on('data', chunk => data += chunk);
-          res.on('end', () => {
-            try {
-              const json = JSON.parse(data);
-              resolve({ streams: json.streams || [] });
-            } catch (e) {
-              console.error('Error parsing streams:', e);
-              resolve({ streams: [] });
-            }
-          });
-        }).on('error', (err) => {
-          console.error('Failed to fetch streams:', err);
-          resolve({ streams: [] });
-        });
+      return Promise.resolve({
+        streams: [
+          {
+            name: "Load Private Addons",
+            title: `Open standard Simpsons page to load all your private addons (AIOStreams, etc.) for S${season} E${episode}`,
+            externalUrl: `stremio:///detail/series/tt0096697/tt0096697:${season}:${episode}`
+          }
+        ]
       });
     }
   }
