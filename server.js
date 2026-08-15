@@ -17,17 +17,17 @@ try {
   console.warn('Run "npm run build:dataset" to generate dataset.json.');
 }
 
-const SERIES_ID = 'simpsons_essential_cut';
+const SERIES_ID = 'simpsons_curated_150';
 
 const manifest = {
   id: 'community.simpsons.essentialcut',
-  version: '1.0.6',
+  version: '1.0.7',
   name: 'The Simpsons: The Essential Cut',
   description: 'Curated golden-era run of 150 essential episodes of The Simpsons (Seasons 1-14).',
-  types: ['tv'],
+  types: ['series'],
   catalogs: [
     {
-      type: 'tv',
+      type: 'series',
       id: 'simpsons_essential_catalog',
       name: 'The Simpsons: Essential Cut',
       extra: [
@@ -38,7 +38,7 @@ const manifest = {
     }
   ],
   resources: ['catalog', 'meta', 'stream'],
-  idPrefixes: ['tt'],
+  idPrefixes: ['simpsons_curated'],
   logo: 'https://images.metahub.space/logo/medium/tt0096697/img',
   background: 'https://images.metahub.space/background/medium/tt0096697/img'
 };
@@ -46,8 +46,8 @@ const manifest = {
 const builder = new addonBuilder(manifest);
 
 const SERIES_METADATA = {
-  id: 'tt0096697',
-  type: 'tv',
+  id: SERIES_ID,
+  type: 'series',
   name: 'The Simpsons (The Essential Cut)',
   genres: ['Animation', 'Comedy'],
   poster: 'https://images.metahub.space/poster/small/tt0096697/img',
@@ -62,7 +62,7 @@ const SERIES_METADATA = {
 
 // Catalog Handler
 builder.defineCatalogHandler((args) => {
-  if (args.type === 'tv' && args.id === 'simpsons_essential_catalog') {
+  if (args.type === 'series' && args.id === 'simpsons_essential_catalog') {
     if (args.extra && args.extra.search) {
       const q = args.extra.search.toLowerCase();
       if ('the simpsons essential cut'.includes(q) || 'simpsons'.includes(q) || 'essential'.includes(q)) {
@@ -79,11 +79,23 @@ builder.defineCatalogHandler((args) => {
 
 // Meta Handler - Serves exclusively our 150 essential episodes
 builder.defineMetaHandler((args) => {
-  if (args.type === 'tv' && args.id === 'tt0096697') {
+  if (args.type === 'series' && args.id === SERIES_ID) {
+    // Stremio strictly requires video IDs to begin with the series ID
+    // We also strip out any extra fields that might fail Stremio validation
+    const mappedVideos = dataset.map(video => ({
+      id: `${SERIES_ID}:${video.season}:${video.episode}`,
+      title: video.title,
+      season: video.season,
+      episode: video.episode,
+      released: video.released,
+      thumbnail: video.thumbnail,
+      overview: video.overview
+    }));
+
     return Promise.resolve({
       meta: {
         ...SERIES_METADATA,
-        videos: dataset
+        videos: mappedVideos
       }
     });
   }
@@ -92,7 +104,7 @@ builder.defineMetaHandler((args) => {
 
 // Stream Handler - Translates our custom ID back to IMDb and proxies streams
 builder.defineStreamHandler((args) => {
-  if (args.type === 'tv' && args.id.startsWith('tt0096697:')) {
+  if (args.type === 'series' && args.id.startsWith(`${SERIES_ID}:`)) {
     const parts = args.id.split(':');
     if (parts.length === 3) {
       const season = parts[1];
