@@ -1,4 +1,6 @@
-const { addonBuilder, serveHTTP } = require('stremio-addon-sdk');
+const express = require('express');
+const { addonBuilder, getRouter } = require('stremio-addon-sdk');
+const landingTemplate = require('stremio-addon-sdk/src/landingTemplate');
 const path = require('path');
 const fs = require('fs');
 
@@ -17,7 +19,7 @@ try {
 
 const manifest = {
   id: 'community.simpsons.essentialcut',
-  version: '1.0.1',
+  version: '1.0.2',
   name: 'The Simpsons: The Essential Cut',
   description: 'Curated golden-era run of 150 essential episodes of The Simpsons (Seasons 1-14).',
   types: ['series'],
@@ -58,7 +60,6 @@ const SERIES_METADATA = {
 // Catalog Handler
 builder.defineCatalogHandler((args) => {
   if (args.type === 'series' && args.id === 'simpsons_essential_catalog') {
-    // If search filter is used
     if (args.extra && args.extra.search) {
       const q = args.extra.search.toLowerCase();
       if ('the simpsons essential cut'.includes(q) || 'simpsons'.includes(q) || 'essential'.includes(q)) {
@@ -87,13 +88,37 @@ builder.defineMetaHandler((args) => {
   return Promise.resolve({ meta: null });
 });
 
+const app = express();
+
+// Enable universal CORS
+app.use((req, res, next) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Headers', '*');
+  next();
+});
+
+// Stremio official router
+app.use(getRouter(builder.getInterface()));
+
+// Intelligent Root handler: serves JSON manifest to Stremio / API clients, and HTML to browsers
+app.get('/', (req, res) => {
+  const accept = req.headers['accept'] || '';
+  const userAgent = (req.headers['user-agent'] || '').toLowerCase();
+
+  // If a browser explicitly visits without API / JSON accept header
+  if (accept.includes('text/html') && !accept.includes('application/json') && !userAgent.includes('stremio')) {
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    return res.end(landingTemplate(manifest));
+  }
+
+  // Otherwise return JSON manifest directly so Stremio never fails even if installed from root URL
+  res.setHeader('Content-Type', 'application/json; charset=utf-8');
+  return res.json(manifest);
+});
+
 const PORT = parseInt(process.env.PORT, 10) || 7000;
 
-serveHTTP(builder.getInterface(), { port: PORT })
-  .then((server) => {
-    console.log(`Add-on HTTP server running on port ${PORT}`);
-    console.log(`Manifest URL: ${server.url || `http://127.0.0.1:${PORT}/`}manifest.json`);
-  })
-  .catch((err) => {
-    console.error('Failed to start server:', err);
-  });
+app.listen(PORT, () => {
+  console.log(`Add-on HTTP server listening on port ${PORT}`);
+  console.log(`Manifest URL: http://127.0.0.1:${PORT}/manifest.json`);
+});
